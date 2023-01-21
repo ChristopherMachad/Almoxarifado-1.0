@@ -1,0 +1,46 @@
+{
+    "produtos_mecanica": [
+        {
+            "produto": "Parafuso",
+            "preco": 0.5,
+            "estoque": 100
+        },
+        {
+            "produto": "Porca",
+            "preco": 0.2,
+            "estoque": 200
+        },
+        {
+            "produto": "Arruela",
+            "preco": 0.3,
+            "estoque": 150
+        },
+        {
+            "produto": "martelo",
+            "preco": 5.0,
+            "estoque": 100
+        },
+        {
+            "produto": "correia A60",
+            "preco": 10.0,
+            "estoque": 100
+        }
+    ],
+    "produtos_eletrica": [
+        {
+            "produto": "Fio",
+            "preco": 0.8,
+            "estoque": 50
+        },
+        {
+            "produto": "Interruptor",
+            "preco": 2.5,
+            "estoque": 20
+        },
+        {
+            "produto": "Tomada",
+            "preco": -11.0,
+            "estoque": -5
+        }
+    ]
+}
