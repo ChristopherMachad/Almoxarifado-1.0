@@ -1,0 +1,221 @@
+# teste de um sistema de almoxarifado feito com Tkinter e djson para salvar os dados.
+
+#------------------------------ Arrumar ------------------------------
+# 1 - Fazer interface no canvas e arrumar o código para que ele chame as imagens
+# 2 - Fazer mais mensagens de erro
+# 3 - estoque aceita numero negativo. 
+
+#------------------------------ Arrumar ------------------------------
+
+
+
+from tkinter import Entry, Tk, Button, Label, NSEW, Frame, FALSE, END, ttk
+from tkinter import Listbox
+import tkinter as tk
+import json
+import tkinter.messagebox as messagebox
+
+class TelaMain():
+    #----cores----
+    __gray        = '#a7acb6' #cinza
+    __gray_one    = '#333333' #cinza denovo
+
+    #---------resolução--------
+    __width = 700
+    __height = 500
+
+    def __init__(self):
+        self.tela = Tk()
+        self.tela.geometry(str(self.__width)+'x'+str(self.__height))
+        self.tela.resizable(width=FALSE, height=FALSE)
+
+          #frames
+        self.frame_esquerdo = Frame(self.tela, width = 150, height = 500, bg= self.__gray)
+        self.frame_esquerdo.place(x =0, y = 0)
+        self.frame_direito = Frame(self.tela, width = 550, height = 500, bg= self.__gray_one )
+        self.frame_direito.place(x = 150, y = 0)
+
+            #estrutura
+        self.inicio = Button ( self.frame_esquerdo, text = 'Inicio')
+        self.inicio.place(x = 5, y = 10)
+        self.inicio.bind("<Enter>", self.show_inicio)
+        self.cadastro = Button (self.frame_esquerdo, text = 'Cadastro')
+        self.cadastro.place( x = 5, y = 50)
+        self.cadastro.bind("<Enter>", self.cadastro_func)
+        self.pedidos = Button (self.frame_esquerdo, text = 'Pedidos')
+        self.pedidos.place( x = 5, y = 90)
+        self.relatorios = Button(self.frame_esquerdo, text = 'Relatórios')
+        self.relatorios.place(x = 5, y = 130)
+
+        self.tela.mainloop()
+  
+    #---------------------------------------botao inicio-------------------------
+    def show_inicio(self, event):
+        self.clear_frame_direito()
+        self.welcome_label = Label(self.frame_direito, text = "Bem vindo", font=("Arial", 20))
+        self.welcome_label.place(x = 200, y = 20)
+        self.product_data = None
+        try:
+            with open("data.json", "r") as json_file:
+                data = json.load(json_file)
+                self.prod_mecanicos = data["produtos_mecanica"]
+                self.prod_eletricos = data["produtos_eletrica"]
+        except (FileNotFoundError, json.decoder.JSONDecodeError):
+            messagebox.showerror("Erro", "Não foi possível carregar os dados dos produtos.")
+            return
+    #-------------------------------------primeira combobox-------------------------
+        self.combo_categoria = ttk.Combobox(self.frame_direito, values=['produtos_mecanica', 'produtos_eletrica'])
+        self.combo_categoria.place(x=20, y=60, width= 400)
+        self.combo_categoria.set("Selecione a categoria")
+        self.combo_categoria.bind("<<ComboboxSelected>>", self.show_products)
+        
+        self.label_subtract_quantity = Label(self.frame_direito, text="Quantidade a subtrair: ")
+        self.label_subtract_quantity.place(x=20, y=220)
+        self.entry_subtract_quantity = Entry(self.frame_direito, width=5)
+        self.entry_subtract_quantity.place(x=150, y=220)
+        
+        self.subtract_button = Button(self.frame_direito, text="Subtrair", command=self.subtract_quantity)
+        self.subtract_button.place(x=20, y=270)
+    
+    def subtract_quantity(self):
+        selected_product = self.combo_products.get()
+        subtract_quantity = self.entry_subtract_quantity.get()
+        
+        if not all([selected_product, subtract_quantity]):
+            messagebox.showerror("Erro", "Por favor, selecione um produto e insira uma quantidade a ser subtraída.")
+            return
+        
+        try:
+            subtract_quantity = int(subtract_quantity)
+        except ValueError:
+            messagebox.showerror("Erro", "A quantidade a ser subtraída deve ser um número.")
+            return
+        category = self.combo_categoria.get()
+        if category == "produtos_mecanica":
+            products_list = self.prod_mecanicos
+        elif category == "produtos_eletrica":
+            products_list = self.prod_eletricos
+        else:
+            return
+        
+        for product in products_list:
+            if product["produto"] == selected_product:
+                product["preco"] -= subtract_quantity
+                product["estoque"] -= subtract_quantity
+                messagebox.showinfo("Sucesso", f"{subtract_quantity} foi subtraído do preço e estoque de {selected_product}.")
+                break
+        else:
+            messagebox.showerror("Erro", "Produto não encontrado.")
+            return
+
+        
+        with open("data.json", "w") as json_file:
+            json.dump({"produtos_mecanica": self.prod_mecanicos, "produtos_eletrica": self.prod_eletricos}, json_file, indent=4)
+
+    def show_products(self, event):
+        category = self.combo_categoria.get()
+        if category == "produtos_mecanica":
+            products_list = [product["produto"] for product in self.prod_mecanicos]
+        elif category == "produtos_eletrica":
+            products_list = [product["produto"] for product in self.prod_eletricos]
+        else:
+            return
+        self.combo_products = ttk.Combobox(self.frame_direito, values=products_list)
+        self.combo_products.place(x=20, y=90, width=400)
+        self.combo_products.set("Selecione o produto")
+        self.combo_products.bind("<<ComboboxSelected>>", self.show_product_details)
+
+    
+    def show_product_details(self, event):
+        product_name = self.combo_products.get()
+        if not product_name:
+            return
+        category = self.combo_categoria.get()
+        if category == "produtos_mecanica":
+            product_data = next(product for product in self.prod_mecanicos if product["produto"] == product_name)
+        elif category == "produtos_eletrica":
+            product_data = next(product for product in self.prod_eletricos if product["produto"] == product_name)
+        else:
+            return
+
+        self.label_product_name = Label(self.frame_direito, text="Nome: " + product_data["produto"])
+        self.label_product_name.place(x=20, y=120)
+        self.label_product_price = Label(self.frame_direito, text="Preço: " + str(product_data["preco"]))
+        self.label_product_price.place(x=20, y=150)
+        self.label_product_stock = Label(self.frame_direito, text="Estoque: " + str(product_data["estoque"]))
+        self.label_product_stock.place(x=20, y=180)
+
+
+
+    def clear_frame_direito(self, event):
+        for widget in self.frame_direito.winfo_children():
+            widget.destroy()
+
+    #---------------------------------------botao cadastro-------------------------
+    def cadastro_func(self, event):
+        self.clear_frame_direito()
+
+        self.label_product_name = Label(self.frame_direito, text="Nome do Produto: ")
+        self.label_product_name.place(x=20, y=20)
+        self.entry_product_name = Entry(self.frame_direito, width=20)
+        self.entry_product_name.place(x=150, y=20)
+
+        self.label_product_price = Label(self.frame_direito, text="Preço: ")
+        self.label_product_price.place(x=20, y=50)
+        self.entry_product_price = Entry(self.frame_direito, width=20)
+        self.entry_product_price.place(x=150, y=50)
+
+        self.label_product_stock = Label(self.frame_direito, text="Estoque: ")
+        self.label_product_stock.place(x=20, y=80)
+        self.entry_product_stock = Entry(self.frame_direito, width=20)
+        self.entry_product_stock.place(x=150, y=80)
+
+        self.label_product_category = Label(self.frame_direito, text="Categoria: ")
+        self.label_product_category.place(x=20, y=110)
+        self.combo_categoria = ttk.Combobox(self.frame_direito, values=['produtos_mecanica', 'produtos_eletrica'])
+        self.combo_categoria.place(x=150, y=110)
+        self.combo_categoria.set("Selecione a categoria")
+        self.save_button = Button(self.frame_direito, text="Salvar", command=self.save_product)
+        self.save_button.place(x=20, y=140)
+
+
+    def save_product(self):
+        product_name = self.entry_product_name.get()
+        product_price = self.entry_product_price.get()
+        product_stock = self.entry_product_stock.get()
+        product_category = self.combo_categoria.get()
+
+        if not all([product_name, product_price, product_stock, product_category]):
+            messagebox.showerror("Erro", "Por favor, preencha todos os campos.")
+            return
+
+        try:
+            product_price = float(product_price)
+            product_stock = int(product_stock)
+        except ValueError:
+            messagebox.showerror("Erro", "Preço e estoque devem ser números.")
+            return
+
+        if product_category == "produtos_mecanica":
+            self.prod_mecanicos.append({"produto": product_name, "preco": product_price, "estoque": product_stock})
+        elif product_category == "produtos_eletrica":
+            self.prod_eletricos.append({"produto": product_name, "preco": product_price, "estoque": product_stock})
+        else:
+            messagebox.showerror("Erro", "Categoria inválida.")
+            return
+
+        with open("data.json", "w") as json_file:
+            json.dump({"produtos_mecanica": self.prod_mecanicos, "produtos_eletrica": self.prod_eletricos}, json_file, indent= 4)
+
+        messagebox.showinfo("Sucesso", "Produto salvo com sucesso.")
+        self.clear_frame_direito()
+        self.show_inicio()
+
+    
+    #------Função para limpar a tela nova ao clicar nos botões laterias (frame_esquerdo)
+    def clear_frame_direito(self):
+        for widget in self.frame_direito.winfo_children():
+            widget.destroy()
+
+
+tela = TelaMain()
